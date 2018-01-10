@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Leveltron</title>
+
+<!-- Engine -->
+	<script src="js/container/container.js"></script>
+	<script src="js/container/screen.js"></script>
+	<script src="js/container/flow.js"></script>
+	<script src="js/container/lib.js"></script>
+	<script src="js/container/layout.js"></script>
+	<script src="js/container/storage.js"></script>
+	
+	<!-- asset-handlers -->
+	<script src="js/container/sprites.js"></script>
+	<script src="js/container/sfx.js"></script>
+
+	<!-- Inputs -->
+	<!--<script src="js/container/input/gamepad.js"></script>-->
+	<script src="js/container/input/keyboard.js"></script>
+	<script src="js/container/input/mouse.js"></script>
+	<!--<script src="js/container/input/context_menu.js"></script>-->
+
+	<!-- Trons -->
+	<script src="js/container/trons/bugtron.js"></script>
+	<script src="js/container/trons/beepotron.js"></script>
+	<script src="js/container/trons/fontron.js"></script>
+	<script src="js/container/trons/musitron.js"></script>
+
+	<style>
+			@font-face {
+			font-family: 'title';
+			src: url('obake_free_ver.woff2') format('woff2'),
+				 url('obake_free_ver.woff') format('woff');
+			font-weight: normal;
+			font-style: normal;
+		}
+		.font_title
+		{
+		 font-family: title;
+		}
+	</style>
+
+	
+	<!-- diverse helper classes -->
+	<script src="js/container/buttons.js"></script>
+	
+	<!-- Add pages here, to be handled by the container Flow Object -->
+	<script src="js/pages/menu.js"></script>
+	<script src="js/pages/options.js"></script>
+	<script src="js/pages/editor_page.js"></script>
+	
+	<!-- Add any sound assets here in js form -->
+	<script src="js/assets/sfx/beep.js"></script>
+
+	<!-- Add any sprite font assets here in js form -->
+	<!--<script src="js/assets/fonts/mainframe.js"></script>-->
+
+	<!-- Add any sprite assets here in js form -->
+	<!-- <script src="js/assets/sprites/logo.js"></script>-->
+
+	<!-- Add any (solo) image assets here in js form -->
+	
+	<!-- GameModel -->
+	<script src="js/game/game.js"></script> <!-- game layout -->
+		<!--<script src="js/game/players.js"></script> --><!-- game players / controls -->
+	<script src="js/game/room.js"></script>  <!-- size of gameroom -->
+	<script src="js/game/collisions.js"></script> <!-- please do not touch -->
+	<script src="js/game/camera.js"></script> <!-- please do not touch -->
+	<script src="js/game/dictionary.js"></script> <!-- please do not touch -->
+	<script src="js/game/particles.js"></script> <!-- please do not touch -->
+	<script src="js/game/tileEvents.js"></script> <!-- please do not touch -->
+	<script src="js/game/tilemap.js"></script> <!-- please do not touch -->
+	<script src="js/game/levels.js"></script> <!-- please do not touch  -->
+	<script src="js/game/player.js"></script> <!-- please do not touch -->
+	<script src="js/game/engine.js"></script> <!-- please do not touch  -->
+	<script src="js/game/hud.js"></script> <!-- please do not touch  -->
+
+	<!-- GameObjects -->
+	<script src="js/game/objects/default_object.js"></script> <!-- please do not touch -->
+	<script src="js/game/objects/tiles.js"></script> <!-- please do not touch -->
+	<script src="js/game/objects/hero.js"></script>  <!-- creator defined game object --> 
+
+</head>
+<body>
+<script>
+MG.addOnLoad("HTML",function()
+{
+	//MG.screen.setSize(800,600); // fake a page of this size! .. if not set, the page will be as big as initial window.
+	/*
+		this is executed when the MG-engine has been started up, loaded all assets and plugins and you want something to happen.
+	*/
+	MG.flow.gotoPage("menu"); // enter the first page, or else, nothing happens and you see a blank screen:)
+});
+
+</script>
+</body>
+</html>
