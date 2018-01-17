@@ -13,7 +13,7 @@
 		outer.style.visibility = "hidden";
 		outer.style.width = "100px";
 		outer.style.msOverflowStyle = "scrollbar"; // needed for WinJS apps
-
+		
 		document.body.appendChild(outer);
 
 		var widthNoScroll = outer.offsetWidth;
@@ -44,13 +44,12 @@
 		console.log("init EditorPage");
 		this.scrollbars=document.createElement("div");
 		dom.appendChild(this.scrollbars); // take it out of the LIB, put it on the page, this does however mean it will not be REcreated.
-
-		
+	
 		
 		// now determine the size inside without scrollbars
 		this.scrollcontent=document.createElement("div");
 		this.scrollbars.appendChild(this.scrollcontent); // take it out of the LIB, put it on the page, this does however mean it will not be REcreated.
-		this.scrollcontent.style.width="16000px";
+		this.scrollcontent.style.width="16000px"; // make it big initially..
 		this.scrollcontent.style.height="16000px";
 		
 		
@@ -66,7 +65,8 @@
 
 		console.log("Editor Dimensions: "+this.w,this.h);
 		MG.game.viewport.setDimensions(this.canvas.width,this.canvas.height);
-		MG.game.init(this);
+		MG.editorView.init(this); // starts the engine..
+		MG.editorControls.init(this);
 		//MG.game.start();
 		
 	};
@@ -79,6 +79,7 @@
 		this.canvas.style.top="0px";
 		this.canvas.width=this.w-this.scrollbar_size
 		this.canvas.height=(this.h-this.controls_height-this.scrollbar_size);
+		MG.game.viewport.setDimensions(this.canvas.width,this.canvas.height);
 		
 		console.log(this.controls+": "+typeof(this.controls));
 		this.controls.style.position="absolute";

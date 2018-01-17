@@ -21,6 +21,10 @@ var data_urls=
 function Lib()
 {
 	this.images={};
+	this.style = document.createElement("style");
+	this.style.id="lib_stylesheet";
+	document.head.appendChild(this.style); // header is there, as we are actually doing stuff.
+	this.style.innerHTML="#lib,#debug{font-family: sans-serif;}"
 };
 
 /*

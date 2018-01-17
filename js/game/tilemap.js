@@ -15,7 +15,6 @@
 		
 		// we buffer the level in sectors for quicker drawing.
 		this.sectorSize={w:32,h:32};
-		this.sectors=
 		
 		this.f=0; // the map counter for animated tiles.
 		this.data=[
@@ -44,12 +43,7 @@
 			{col: '#0FF',solid: false,overEvent: 'unlock'}];
 		// copy it in [x][y] order, map is in [y][x] to be better readable.
 		
-		 /* Default gravity of the map */
-		
-		this.gravity= {
-			x: 0,
-			y: 0.3
-		};    
+	
 		/* The coordinates at which the player spawns and the col of the player */
 		this.player= {
 			x: 2,
@@ -98,11 +92,72 @@
 	};	
 	TileMap.prototype.setTile=function(x,y,kind)
 	{
-		this.data[y][x]=kind;
+		
+		if(y>=0 && y<this.h && x>=0 && x<this.w)
+			this.data[y][x]=kind;
 	}
 
 	// draw the map into the viewport, using the camera.
-	TileMap.prototype.draw=function(ctx,camera)
+	TileMap.prototype.setSize=function(w,h)
+	{
+		console.log("set tilemap size: "+w+"x"+h);
+		// we need to adapt the data to the new size!
+		var new_data=[];
+		for(var y=0;y<h;y++)
+		{
+			new_data[y]=[];
+			for(var x=0;x<w;x++)
+			{
+				if(typeof(this.data[y])!="undefined" && typeof(this.data[y][x])!="undefined")
+				{
+					new_data[y][x]=this.data[y][x];
+				}else{
+					new_data[y][x]=0;
+				}
+			}
+		}
+		this.w=w;
+		this.h=h;
+		this.data=new_data;
+
+	};
+	 
+	TileMap.prototype.readFromFile=function(txt)
+	{
+		var data=JSON.parse(txt);
+		this.id=data.id;
+		this.w=data.w;
+		this.h=data.h;
+		this.setSize(this.w,this.h);
+		this.data=JSON.parse(JSON.stringify(data.data));// deep copy array
+		this.player=JSON.parse(JSON.stringify(data.player));// deep copy array
+	}
+	TileMap.prototype.getSlotData=function(message)
+	{
+		console.log("getting slot data from "+message.from);
+		this.id=message.id;
+		this.w=message.data.w;
+		this.h=message.data.h;
+		this.setSize(this.w,this.h);
+		this.data=JSON.parse(JSON.stringify(message.data.data));// deep copy array
+		this.player=JSON.parse(JSON.stringify(message.data.player));// deep copy array
+		// we need to refresh some stuff, in the controls..
+		MG.editorControls.updateLevelProps(); // show possibly new size and stuff of level.
+		MG.editorView.setLevelSize(this.w*this.tileSize.w,this.h*this.tileSize.h); // show possibly new size and stuff of level.
+	}
+	TileMap.prototype.cleanCopy=function()
+	{
+		var data={};
+		data.id=this.id;
+		data.w=this.w;
+		data.h=this.h;
+		data.data=JSON.parse(JSON.stringify(this.data));// deep copy array
+		data.player=JSON.parse(JSON.stringify(this.player));// deep copy array
+		return data;
+	};
+
+	// draw the map into the viewport, using the camera.
+	TileMap.prototype.draw=function(ctx,camera,showSize)
 	{
 		// get the width of the viewport in tiles..
 //		console.log("camera.viewport"+JSON.stringify(camera.viewport));
@@ -130,7 +185,19 @@
 				ctx.strokeRect(tx*this.tileSize.w,ty*this.tileSize.h,this.tileSize.w,this.tileSize.h);
 			}
 		}
+		if(	showSize==true)
+		{
+			// we need to show the size the user has set..
+			var w=this.w*this.tileSize.w;
+			var h=this.h*this.tileSize.h;
+			ctx.strokeStyle="rgba(0,0,0,0.5)";
+			ctx.lineWidth=this.tileSize.w;
+			ctx.strokeRect(-this.tileSize.w/2,-this.tileSize.w/2,w+this.tileSize.w,h+this.tileSize.w);
 			
+			ctx.strokeStyle="#fff";
+			ctx.lineWidth=1;
+			ctx.strokeRect(1,1,w,h);
+		}
 	};
 	MG.extend(MG,"game");
 	MG.game.TileMap=TileMap;

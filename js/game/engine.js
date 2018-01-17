@@ -22,37 +22,22 @@ function Engine()
 	
 	this.canvas=MG.game.canvas; // by default we will just take the game.canvas, which is actually created by the gamePAGE!
 
-	MG.input.mouse.clickHandler=this.clickPointer.bind(this);
 }
 
 Engine.prototype.clickPointer=function(ev)
 {
-	if(this.state!="playing"){
+	console.log("clickPointer");
+	if(this.state!="editing"){
 		console.log("Game ignores click, not playing.."+this.state);
 		return;
 	}
-	// find out the closest gameObject.
-	var os=this.objects,i,o,closest=-1,dist=200; // object click area..
-	for(i=os.length-1;i>=0;i--)
-	{
-		o=os[i];
-		if(o.clickable)
-		{
-			var dx=o.x-MG.input.mouse.x;
-			var dy=o.y-MG.input.mouse.y;
-			var len=Math.sqrt(dx*dx+dy*dy);
-			if(len<dist)
-			{
-				dist=len;
-				closest=i;
-			}
-		}
-	}
-	if(closest!=-1)
-	{
-		var clicked_object=this.objects[closest];
-		clicked_object.event({type:"click"});
-	}
+	// what block was clicked
+	var x=MG.input.mouse.x;
+	var y=MG.input.mouse.y;
+	console.log("click "+x+","+y);
+	var block=MG.game.tilemap.getTileAt(x,y);
+	console.log("block: "+JSON.stringify(block))
+	
 };
 Engine.prototype.startPerformanceCheck=function(name)
 {
@@ -80,7 +65,6 @@ Engine.prototype.endPerformanceCheck=function(name)
 Engine.prototype.getTimeStamp=function()
 {
 	return  window.performance.now();
-//	return new Date().getTime();
 }
 
 Engine.prototype.start=function()
@@ -88,8 +72,7 @@ Engine.prototype.start=function()
 	console.log("Starting Game Engine");
 	MG.game.pause=false;// we have started!
 	MG.game.controller=1; // it is either one or two..
-	this.switchState("frozen");
-	
+	this.switchState("editing");
 };
 
 Engine.prototype.stop=function()
@@ -138,24 +121,11 @@ Engine.prototype.switchState=function(st)
 	{
 		this.state=st;
 		this.stateCounter=0;
-		MG.input.mouse.clickHandler=null;
+	
 		switch(st)
 		{
-			case "win":
-				console.log("game state switch to win");
-			break;
-			case "lost":
-				console.log("game state switch to lost");
-				
-			break;
-			case "stopped":
-				console.log("game state switch to stopped");
-			break;
-			case "frozen":
-			case "playing":
+			case "editing":
 				console.log("game state switch to playing");
-//				MG.trons.musitron.stopAll();
-//				MG.trons.musitron.play("game");
 				if(this.ended==true)
 				{
 					console.log("ended, but showing a few more frames..");
@@ -163,10 +133,6 @@ Engine.prototype.switchState=function(st)
 					if(this.end_counter<=0) this.switchState("stopped");
 				}
 				this.loop();
-			break;			
-			case "pause":
-				console.log("game state switch to playing");
-				MG.trons.musitron.stopAll();
 			break;			
 			default:
 				console.log("Attmpt to switch game state to: " +st);
@@ -244,6 +210,23 @@ Engine.prototype.clearBackground=function(ctx)
 	ctx.fillStyle="#00f";
 	ctx.fillRect(0,0,MG.game.viewport.w,MG.game.viewport.h);
 }
+Engine.prototype.drawOverTile=function(ctx)
+{
+	var x=0,y=0,w=10,h=10;
+	if(typeof(MG.game.tilemap)!="undefined")
+	{
+		w=MG.game.tilemap.tileSize.w;
+		h=MG.game.tilemap.tileSize.h;
+		x=MG.editorView.mouse.tileX*w;
+		y=MG.editorView.mouse.tileY*h;
+		ctx.strokeStyle="#000";
+		ctx.lineWidth=4;
+		ctx.strokeRect(x,y,w,h);
+		ctx.strokeStyle="#fff";
+		ctx.lineWidth=2;
+		ctx.strokeRect(x,y,w,h);
+	}
+}
 
 Engine.prototype.continueLoop=function()
 {
@@ -267,22 +250,30 @@ Engine.prototype.loadLevel=function(nr)
 	var level_data=MG.game.levels.getData(nr);
 	console.log("loaded level_data "+nr+":"+JSON.stringify(level_data));
 	MG.game.tilemap=new MG.game.TileMap(); // now we can get two tilemaps if we want..
+	// load the initial level, but keep open for edits..
+
+	MG.slotMessenger.addAction("edit",MG.game.tilemap.getSlotData.bind(MG.game.tilemap));
+
 	MG.game.tilemap.init(level_data); // deze returned nog niks..
+	MG.editorView.setLevelSize(level_data.w*MG.game.tilemap.w,level_data.h*MG.game.tilemap.h);
+	MG.editorControls.updateTiles(); // update tiles from current dictionary.
 	
-	MG.game.camera1=new MG.game.Camera(); // now we can get two camera's if we want.
-	MG.game.camera2=new MG.game.Camera(); // now we can get two camera's if we want.
-	MG.game.camera=MG.game.camera1; // active camera.
-	MG.game.camera1.init(MG.game.tilemap.w*MG.game.tilemap.tileSize.w,MG.game.tilemap.h*MG.game.tilemap.tileSize.h,MG.game.viewport.w,MG.game.viewport.h);
-	MG.game.camera2.init(MG.game.tilemap.w*MG.game.tilemap.tileSize.w,MG.game.tilemap.h*MG.game.tilemap.tileSize.h,MG.game.viewport.w,MG.game.viewport.h);
-	MG.game.camera1.setPos(0,0); 
-	MG.game.camera2.setPos(0,0); 
+//	MG.game.camera1=new MG.game.Camera(); // now we can get two camera's if we want.
+//	MG.game.camera2=new MG.game.Camera(); // now we can get two camera's if we want.
+	MG.game.camera=new MG.game.Camera(); // active camera.
+	MG.game.camera.init(MG.game.tilemap.w*MG.game.tilemap.tileSize.w,MG.game.tilemap.h*MG.game.tilemap.tileSize.h,MG.game.viewport.w,MG.game.viewport.h);
+	MG.game.camera.setPos(-MG.editorView.margin,-MG.editorView.margin); 
+//	MG.game.camera1.init(MG.game.tilemap.w*MG.game.tilemap.tileSize.w,MG.game.tilemap.h*MG.game.tilemap.tileSize.h,MG.game.viewport.w,MG.game.viewport.h);
+//	MG.game.camera2.init(MG.game.tilemap.w*MG.game.tilemap.tileSize.w,MG.game.tilemap.h*MG.game.tilemap.tileSize.h,MG.game.viewport.w,MG.game.viewport.h);
+//	MG.game.camera1.setPos(0,0); 
+//	MG.game.camera2.setPos(0,0); 
 	
 	// player set to initial position..
-	MG.game.hero1=new MG.game.objects.Hero(1);
-	MG.game.hero2=new MG.game.objects.Hero(2);
-	MG.game.hero=MG.game.hero1; // this one has control!
-	this.spawnObject(MG.game.hero1,MG.game.viewport.w/3,MG.game.viewport.h/2);
-	this.spawnObject(MG.game.hero2,MG.game.viewport.w/3,MG.game.viewport.h/2);
+//	MG.game.hero1=new MG.game.objects.Hero(1);
+//	MG.game.hero2=new MG.game.objects.Hero(2);
+//	MG.game.hero=MG.game.hero1; // this one has control!
+//	this.spawnObject(MG.game.hero1,MG.game.viewport.w/3,MG.game.viewport.h/2);
+//	this.spawnObject(MG.game.hero2,MG.game.viewport.w/3,MG.game.viewport.h/2);
 //	this.spawnObject(MG.game.hero,1113,1145);
 
 	// spawn everything that needs to be spawned..
@@ -314,53 +305,21 @@ Engine.prototype.loop=function ()
 	// end of camera stuff.
 	switch(this.state)
 	{
-		case "frozen":
-			console.log("frozen: "+this.freeze_counter);
-			this.freeze_counter--;
-			if(this.freeze_counter<=0) 
-			{
-				console.log("switching to playing");
-				this.switchState("playing");
-			}
-			
-			MG.game.tilemap.draw(ctx,MG.game.camera); // let the tilemap draw itself for the sake of debugging..
-			this.drawObjects(ctx);
-			this.continueLoop(); // next FRAME
-		break;
-		case "playing":
-				this.startPerformanceCheck("moveCameraToHero"); 
-				this.moveCameraToHero()
-				this.endPerformanceCheck("moveCameraToHero"); // from loop to loop..
-				this.startPerformanceCheck("moveObjects"); 
+	
+		case "editing":
+//				this.startPerformanceCheck("moveObjects"); 
 				this.moveObjects();
-				this.endPerformanceCheck("moveObjects"); // from loop to loop..
-				this.startPerformanceCheck("checkCollisions"); 
-				this.checkCollisions();
-				this.endPerformanceCheck("checkCollisions"); // from loop to loop..
-				this.startPerformanceCheck("clearBackground"); 
+//				this.endPerformanceCheck("moveObjects"); // from loop to loop..
+//				this.startPerformanceCheck("checkCollisions"); 
+//				this.checkCollisions();
+//				this.endPerformanceCheck("checkCollisions"); // from loop to loop..
+//				this.startPerformanceCheck("clearBackground"); 
 				this.clearBackground(ctx);
-				this.endPerformanceCheck("clearBackground"); // from loop to loop..
-				this.startPerformanceCheck("drawTilemap"); 
-				MG.game.tilemap.draw(ctx,MG.game.camera); // let the grid draw itself
-				this.endPerformanceCheck("drawTilemap"); // from loop to loop..
-				this.startPerformanceCheck("drawObjects"); 
-				this.drawObjects(ctx);
-				this.endPerformanceCheck("drawObjects"); // from loop to loop..
-				this.startPerformanceCheck("particles"); 
-				MG.game.particles.draw(ctx);
-				this.endPerformanceCheck("particles"); // from loop to loop..
-				this.checkWinAndLoose();
-				if(this.ended)
-				{
-					this.end_counter--;
-					if(this.end_counter<=0)
-					{	
-						if(this.won==true)
-							this.event({type:"win"});
-						else
-							this.event({type:"lost"});
-					}
-				}
+//				this.endPerformanceCheck("clearBackground"); // from loop to loop..
+//				this.startPerformanceCheck("drawTilemap"); 
+				MG.game.tilemap.draw(ctx,MG.game.camera,true); // let the grid draw itself
+//				this.endPerformanceCheck("drawTilemap"); // from loop to loop..
+				this.drawOverTile(ctx);
 				
 			this.continueLoop(); // next FRAME
 		break;
