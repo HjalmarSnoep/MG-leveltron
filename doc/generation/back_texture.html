@@ -1,0 +1,77 @@
+<!doctype HTML>
+<html>
+<head>
+<title>Level Generator</title>
+<style>
+	canvas{
+	border: 1px solid rgba(0,0,0,0.25);
+	}
+	.label{
+		display: inline-block;
+		width: 100px;
+	}
+</style>
+</head>
+<body>
+<img src="red.jpg" id="red" style="display: none;">
+<img src="yellow.jpg" id="yellow" style="display: none;">
+<h1>Level generator</h1>
+<div>
+<div class="label">Width: </div><input id="w" value="640" type="number"></input><br>
+<div class="label">Height:</div><input id="h" value="160" type="number"></input><br>
+<div class="label">GridSize:</div><input id="gs" value="32" type="number"></input><br>
+<div class="label">Scale:</div><input id="scale" value="4" type="number"></input><br>
+<button id="new">Generate New</button>
+</div>
+<div id="levels"></div>
+<script>
+	document.getElementById("new").addEventListener("click",generate);
+	function generate()
+	{
+		var tex1=document.getElementById("red");
+		var tex2=document.getElementById("yellow");
+		var tex=tex1;
+		var w=document.getElementById("w").value;
+		var h=document.getElementById("h").value;
+		var gs=parseInt(document.getElementById("gs").value);
+		var sc=parseFloat(document.getElementById("scale").value);
+		var c=document.createElement("canvas");
+		c.width=w;
+		c.height=h;
+		document.getElementById("levels").appendChild(c);
+		var ctx=c.getContext("2d");
+		ctx.fillStyle="#fff";
+		
+		ctx.fillRect(0,0,w,h);
+		var p=[],x,y;// particles
+		
+		// fill with random stuff
+		for(x=0;x<w;x+=gs)
+		{
+			for(y=0;y<h;y+=gs)
+			{
+				if(Math.random()<0.5) tex=tex2;
+				if(Math.random()<0.5) tex=tex1;
+				
+				var xr=Math.random()*(tex.width-gs*sc);
+				var yr=Math.random()*(tex.height-gs*sc);
+				ctx.drawImage(tex,xr,yr,gs*sc,gs*sc,x,y,gs,gs);
+			}
+		}
+		// fill with adjacent stuff if possible.
+		for(x=0;x<w;x+=gs)
+		{
+			for(y=0;y<h;y+=gs)
+			{
+				if(Math.random()<0.5) tex=tex2;
+				if(Math.random()<0.5) tex=tex1;
+				
+				var xr=x*sc%tex.width;
+				var yr=y*sc%tex.height
+				ctx.drawImage(tex,xr,yr,gs*sc,gs*sc,x,y,gs,gs);
+			}
+		}
+	}
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype HTML>
+<html>
+<head>
+<title>Tile Generator</title>
+</head>
+<body>
+<h1>Tile generator</h1>
+<svg id="svg" width=400 height=400><g id="paths"></g></svg><br>
+<div id="result"></div>
+<button id="new">Generate New</button>
+<script>
+	document.getElementById("new").addEventListener("click",generate);
+	function getRandom()
+	{
+		return Math.floor(Math.random()*5)*100;
+	}
+	function hussle(a,b)
+	{
+		if(Math.random()<0.5) return -1;
+		return 1;
+	}
+	function generate()
+	{
+		var w=document.getElementById("svg").width;
+		var h=document.getElementById("svg").height;
+		var points=[
+			{x:0,y:100},
+			{x:0,y:200},
+			{x:0,y:300},
+			{x:400,y:100},
+			{x:400,y:200},
+			{x:400,y:300},
+			{y:400,x:100},
+			{y:400,x:200},
+			{y:400,x:300},
+			{y:0,x:100},
+			{y:0,x:200},
+			{y:0,x:300},
+		];
+		
+		points.sort(hussle);
+		var lines=[];
+		for(var i=0;i<points.length;i+=2)
+		{
+			lines.push({p1:i,p2:i+1});
+		}
+		document.getElementById("paths").innerHTML="";
+			var g=document.getElementById("paths");
+			g.setAttribute("stroke","black");
+			g.setAttribute("stroke-width","15");
+			g.setAttribute("fill","none");
+		for(var i=0;i<lines.length;i++)
+		{
+			var p=document.createElement("path");
+			var path="";
+			var p1=points[lines[i].p1];
+			var p2=points[lines[i].p2];
+			path+="M"+p1.x+" "+p1.y+" ";
+			var f=0;
+			path+="A 1 1 0 0 "+f+" "+p2.x+" "+p2.y+" ";
+			f=1;
+			path+="A 1 1 0 0 "+f+" "+p2.x+" "+p2.y+" ";
+			p.setAttribute("d",path);
+
+			g.appendChild(p);
+		}
+		var svg_new=document.createElement("svg");
+		svg.innerHTML=svg.innerHTML; // it won't show up if you don't refresh it.
+		svg_new.innerHTML=svg.innerHTML;
+		svg_new.setAttribute("viewbox","0 0 400 400");
+		svg_new.setAttribute("width","50");
+		svg_new.setAttribute("height","50");
+		svg_new.innerHTML=svg_new.innerHTML;
+		document.getElementById("result").appendChild(svg_new);
+		document.getElementById("result").innerHTML=document.getElementById("result").innerHTML;
+	}
+</script>
+</body>
+</html>

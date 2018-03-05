@@ -1,0 +1,198 @@
+<!doctype HTML>
+<html>
+<head>
+<title>Level Generator</title>
+<style>
+	canvas{
+	border: 1px solid rgba(0,0,0,0.25);
+	}
+	.label{
+		display: inline-block;
+		width: 100px;
+	}
+</style>
+</head>
+<body>
+<h1>Level generator</h1>
+<div>
+<div class="label">Width: </div><input id="w" value="640" type="number"></input><br>
+<div class="label">Height:</div><input id="h" value="160" type="number"></input><br>
+<div class="label">GridSize:</div><input id="gs" value="8" type="number"></input><br>
+<div class="label">Sparcity:</div><input id="sp" value="0.5" step=0.1 type="number"></input><br>
+<div class="label">Wiggle:</div><input id="wiggle" value="0.0" step=0.1 type="number"></input><br>
+<div class="label">RoundCaps:</div><input id="roundcaps" type="checkbox"></input><br>
+<div class="label">Strands:</div><input id="strands" type="checkbox"></input><br>
+<button id="new">Generate New</button>
+</div>
+<div id="levels"></div>
+<script>
+	document.getElementById("new").addEventListener("click",generate);
+	function generate()
+	{
+		var w=document.getElementById("w").value;
+		var h=document.getElementById("h").value;
+		var gs=parseInt(document.getElementById("gs").value);
+		var sp=parseFloat(document.getElementById("sp").value);
+		var c=document.createElement("canvas");
+		var wiggle=parseFloat(document.getElementById("wiggle").value);
+		var roundcaps=(document.getElementById("roundcaps").checked == true);
+		var strands=(document.getElementById("strands").checked == true);
+		console.log(roundcaps)
+		c.width=w;
+		c.height=h;
+		document.getElementById("levels").appendChild(c);
+		var ctx=c.getContext("2d");
+		ctx.fillStyle="#fff";
+		ctx.fillRect(0,0,w,h);
+		var p=[],x,y;// particles
+		var ox=(gs-(w%gs))/2;
+		var oy=(gs-(h%gs))/2;
+		
+		// create all points in grid.
+		
+		for(x=ox;x<w;x+=gs)
+		{
+			for(y=oy;y<h;y+=gs)
+			{
+				if(x<gs || y<gs || x>(w-gs) || y>(h-gs) || Math.random()<sp)
+				p.push({x:x,y:y});
+			}
+		}
+		
+		// create the links..
+		var i,j;
+		var links={};
+		for(i=0;i<p.length;i++)
+		{
+			for(j=0;j<p.length;j++)
+			{
+				if(i!=j)
+				{
+					var dx=p[i].x-p[j].x;
+					var dy=p[i].y-p[j].y;
+					var len=Math.sqrt(dx*dx+dy*dy);
+					if(len<(gs+1))
+					{
+						var p1=i; var p2=j;
+						if(j<i) {p1=j; p2=i;}
+						links[p1+"_"+p2]={p1:p1,p2:p2};
+					}
+				}
+			}
+		}
+		
+		// wiggle the points
+		for(i=0;i<p.length;i++)
+		{
+			p[i].x=p[i].x+wiggle*gs*(Math.random()-0.5);
+			p[i].y=p[i].y+wiggle*gs*(Math.random()-0.5);
+		}
+		// now draw all points
+//		console.log("nr of p: "+p.length)
+//		for(i=0;i<p.length;i++)
+//		{
+		//	ctx.fillRect(p[i].x-2,p[i].y-2,4,4);
+//		}
+		// now draw all links
+		ctx.lineWidth=gs;
+		if(roundcaps)
+			ctx.lineCap="round";
+		for(i in links)
+		{
+			var p1=links[i].p1;
+			var p2=links[i].p2;
+			ctx.beginPath();
+			ctx.moveTo(p[p1].x,p[p1].y);
+			ctx.lineTo(p[p2].x,p[p2].y);
+			ctx.stroke();
+		}
+		
+		if(strands)
+		{
+			console.log("make strands");
+			var particles=[];
+			for(i=0;i<p.length;i++)
+			{
+				// wiggle the points to get more interesting patterns
+				var o={
+					x:p[i].x +gs/10*(Math.random()-0.5),
+					y:p[i].y +gs/10*(Math.random()-0.5)
+					};
+				var dx=0,dy=0;
+				var attr=[];
+				for(j=0;j<p.length;j++)
+				{
+					if(i!=j)
+					{
+						var ddx=p[i].x-p[j].x;
+						var ddy=p[i].y-p[j].y;
+						var len=Math.sqrt(ddx*ddx+ddy*ddy);
+						if(len>0 && len<gs*3)
+						{
+							ddx=ddx/len;
+							ddy=ddy/len;
+							dx-=ddx;
+							dy-=ddy; // look at all surrounding points for direction
+							dx=Math.sin(i);
+							dy=Math.cos(i);
+							attr.push(j);
+						}
+					}
+				}
+				var len=Math.sqrt(dx*dx+dy*dy);
+				if(len!=0)
+				{
+					o.dx=dx/len;
+					o.dy=dy/len;
+				}
+				o.attr=attr;
+				particles.push(o);
+			}
+			ctx.fillStyle="rgba(255,255,255,0.5)";
+			ctx.fillRect(0,0,w,h);
+			ctx.fillStyle="rgba(0,0,128,0.1)";
+			var a,at;
+			for(i=0;i<particles.length;i++) 
+			{
+				at=particles[i].attr;
+//				console.log(at);
+				var pl=4*gs;
+				var pl2=pl/2;
+				for(j=0;j<pl;j++)
+				{
+					// move towards attractors..
+					for(a=0;a<at.length;a++)
+					{
+						var dx=particles[i].x-p[at[a]].x;
+						var dy=particles[i].y-p[at[a]].y;
+						var len2=dx*dx+dy*dy;
+						var len=Math.sqrt(len2);
+						if(len>1)
+						{
+							particles[i].dx-=dx/len2;
+							particles[i].dy-=dy/len2;
+						}
+						var speed=Math.sqrt(particles[i].dx*particles[i].dx+particles[i].dy*particles[i].dy);
+						if(speed>1)
+						{
+							particles[i].dx*=0.95;
+							particles[i].dy*=0.95;
+						}
+					}
+					particles[i].x+=particles[i].dx;
+					particles[i].y+=particles[i].dy;
+					var sz=1;
+					if(j<pl2) sz=j;
+					else sz=pl-j;
+					sz=sz/8;
+					ctx.beginPath();
+					ctx.arc(particles[i].x-sz/2,particles[i].y-sz/2,sz,0,Math.PI*2);
+					ctx.fill();
+				}
+			}
+			
+		}
+	}
+</script>
+</body>
+</html>

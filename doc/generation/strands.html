@@ -1,0 +1,162 @@
+<!doctype HTML>
+<html>
+<head>
+<title>Level Generator</title>
+<style>
+	canvas{
+	border: 1px solid rgba(0,0,0,0.25);
+	}
+	.label{
+		display: inline-block;
+		width: 50px;
+	}
+</style>
+</head>
+<body>
+<h1>Level generator</h1>
+<div>
+<div class="label">Width: </div><input id="w" value="320" type="number"></input><br>
+<div class="label">Height:</div><input id="h" value="320" type="number"></input><br>
+<button id="new">Generate New</button>
+<button id="stop">Stop</button>
+</div>
+<div id="levels"></div>
+<script>
+	document.getElementById("new").addEventListener("click",generate);
+	document.getElementById("stop").addEventListener("click",stop);
+	var data={};
+	var state="";
+	function stop()
+	{
+		state="";
+	}
+	function generate()
+	{
+		var w=document.getElementById("w").value;
+		var h=document.getElementById("h").value;
+		var c=document.createElement("canvas");
+		c.width=w;
+		c.height=h;
+		data.w=w;
+		data.h=h;
+		document.getElementById("levels").appendChild(c);
+		var ctx=c.getContext("2d");
+		data.c=c;
+		data.ctx=ctx;
+		data.particles=[];
+		var r=Math.random()*360;
+		data.particles.push({x:w*Math.random(),y:h*Math.random(),dx:Math.sin(r),dy:Math.cos(r),kind:"bounce",link:1,power:1/100});
+		r=Math.random()*360;
+		data.particles.push({x:w*Math.random(),y:h*Math.random(),dx:Math.sin(r),dy:Math.cos(r),kind:"bounce",link:0,power:1/90});
+		data.particles.push({x:w*Math.random(),y:h*Math.random(),p:0,dp:0.01,kind:"osc",link:[0,1],down:50});
+		state="generating";
+		loop();
+	}
+	function loop()
+	{
+		var part=data.particles;
+		var i;
+		for(i=0;i<part.length;i++)
+		{
+			var p=part[i];
+			switch(p.kind)
+			{
+				case "attr":
+					p.x+=p.dx;
+					p.y+=p.dy;
+					if(p.x>data.w)p.dx=-Math.abs(p.dx);
+					if(p.x<0)p.dx=Math.abs(p.dx);
+					if(p.y>data.h)p.dy=-Math.abs(p.dy);
+					if(p.y<0)p.dy=Math.abs(p.dy);
+					// attract to other part.
+					var target=part[p.link];
+					if(typeof(target)!="undefind")
+					{
+						var dx=target.x-p.x;
+						var dy=target.y-p.y;
+						var len=Math.sqrt(dx*dx+dy*dy);
+						if(len>0){ 
+							dx=dx/len;
+							dy=dy/len;
+							if(len<10)
+							{
+								p.dx-=dx/10;
+								p.dy-=dy/10;
+							}else
+							{
+								p.dx+=dx*p.power;
+								p.dy+=dy*p.power;
+							}
+						}
+					}
+					// regulate speed
+					var speed=Math.sqrt(p.dx*p.dx+p.dy*p.dy);
+/*					if(speed>1){
+						p.dx*=.9;
+						p.dy*=.9;
+					}*/
+/*					data.ctx.fillStyle="#f00";
+					data.ctx.fillRect(p.x,p.y,1,1);
+					*/
+				break;
+				case "bounce":
+					p.x+=p.dx;
+					p.y+=p.dy;
+					if(p.x>data.w)p.dx=-Math.abs(p.dx);
+					if(p.x<0)p.dx=Math.abs(p.dx);
+					if(p.y>data.h)p.dy=-Math.abs(p.dy);
+					if(p.y<0)p.dy=Math.abs(p.dy);
+					//data.ctx.fillStyle="#f00";
+					//data.ctx.fillRect(p.x,p.y,1,1);
+					
+				break;
+				case "osc":
+					p.p+=p.dp;
+					if(p.p>1)p.dp=-Math.abs(p.dp);
+					if(p.p<0)p.dp=Math.abs(p.dp);
+					var p1=data.particles[p.link[0]];
+					var p2=data.particles[p.link[1]];
+					var t={};
+					t.x=p1.x*p.p+(1-p.p)*p2.x
+					t.y=p1.y*p.p+(1-p.p)*p2.y;
+					var dx=t.x-p.x;
+					var dy=t.y-p.y;
+					var speed=Math.sqrt(dx*dx+dy*dy);
+					if(speed>1)
+					{
+						dx=dx/speed;
+						dy=dy/speed;
+					}
+					p.x+=dx;
+					p.y+=dy;
+					if(p.up)
+					{
+						p.up--;
+						if(p.up==0)
+						{
+							p.down=Math.floor(Math.random()*500+100);
+							p.p=0;
+							p.dp=2/p.down;
+						}
+					}else
+					{
+						if(p.down)
+						{
+							p.down--;
+							if(p.down==0)
+							{
+								p.up=Math.floor(Math.random()*100+100);
+							}
+							data.ctx.fillStyle="#000";
+							data.ctx.fillRect(p.x,p.y,p.p*10,p.p*10);
+						}
+					}
+				break;
+			}
+		}
+		if(state=="generating")
+			window.requestAnimationFrame(loop);
+	}
+</script>
+</body>
+</html>
